@@ -1,0 +1,23 @@
+software    version     command
+Kraken2     2.1.3       kraken2 --db k2_standard_20241228 \
+                                --threads 20 \
+                                --output "kraken_standard_out/${sample_name}_output.txt" \
+                                --report "kraken_standard_out/${sample_name}_report.txt" \
+                                "${dir}clean.fastq.gz"
+
+minimap2    2.22-r1101  minimap2 -ax splice ${ref_fa} ${in_fq} -t 6 -o ${out_sam}
+
+samtools    1.13        samtools view -bS ${out_sam} --threads 6 > ${out_bam_tmp}
+                        samtools sort -@ 3 -o $output $input 
+                        samtools index $SORTED_BAM
+                        samtools view -c -f1024 "$bam" #remove duplicate
+                        samtools flagstat "$bam"
+
+FLAIR       2.0.0       python flair-2.0.0/src/flair/bam2Bed12.py -i \"$bam\" --keep_supplementary > \"${bam%.bam}.bed\"
+                        flair correct -q "$bed_file" -f "$ref_gtf" -g "$ref_fa" --output "$out_name" --threads 3
+                        flair collapse -g "${ref_fa}" -q "${bed_file}" --gtf "${ref_gtf}" \
+                                       -r "${fastq_list}" \
+                                       --output "${output_dir}/all_samples_collapsed3" \
+                                       --threads 50 \
+                                       --temp_dir "${output_dir}/tmp3"
+                        flair quantify -r ${manifest} -i ${isoforms} --output ${out_name} --threads 72 --temp_dir ${out_dir} --sample_id_only --tpm
