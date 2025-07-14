@@ -1,14 +1,19 @@
+# --- 1. Load Libraries ---
+library(ggplot2)
+
+
+# --- 2. Read and Prepare Data ---
+# Read the data from 'reads_count.csv'.
 data <- read.csv("reads_count.csv", header = TRUE, sep = ",")
-
 colnames(data) <- c("sample", "total_reads", "reads_part", "percentage")
-
 data$percentage_label <- paste0(round(data$percentage * 100, 2), "%")
 
 
-library(ggplot2)
-
+# --- 2. Read and Prepare Data ---
+# Read the data from 'reads_count.csv'.c
 pdf("Simple_Barplot_Reads.pdf", width = 12, height = 8)  
 
+# Create the bar plot using ggplot2.
 ggplot(data, aes(x = sample, y = reads_part)) +
   geom_col(fill = "steelblue", alpha = 0.7) +
   geom_text(aes(label = percentage_label), 
