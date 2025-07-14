@@ -1,8 +1,19 @@
+"""
+This script processes filtered FASTQ files to categorize reads based on length and quality.
+It classifies each read into one of four conditions and generates a CSV report
+summarizing the counts and ratios for each category per sample file.
+The conditions are:
+1. Length < 200 and Quality < 7
+2. Length < 200 and Quality >= 7
+3. Length >= 200 and Quality < 7
+4. Length >= 200 and Quality >= 7
+"""
 import os
 import csv
 from multiprocessing import Pool
 
 def parse_fastq(file_path):
+    #  A lightweight parser for FASTQ files
     with open(file_path, 'r') as f:
         while True:
             header = f.readline().strip()
@@ -16,13 +27,15 @@ def parse_fastq(file_path):
             yield (seq, qual)
 
 def calculate_metrics(seq, qual):
+    #Calculates the length and average quality of a read.
     read_length = len(seq)
     qual_scores = [ord(c)-33 for c in qual]
     avg_qual = sum(qual_scores)/len(qual_scores) if qual_scores else 0
     return read_length, avg_qual
 
 def process_single_file(file_path):
-    counts = [0]*4 
+    #Processes a single FASTQ file to categorize its reads.
+    counts = [0]*4 # [L<200,Q<7], [L<200,Q>=7], [L>=200,Q<7], [L>=200,Q>=7]
     try:
         for seq, qual in parse_fastq(file_path):
             length, qual = calculate_metrics(seq, qual)
@@ -53,10 +66,14 @@ def process_single_file(file_path):
         return None
 
 def main():
+    """
+    Main function to find FASTQ files, process them in parallel, and write a summary report.
+    """
     input_root = "/public/nanopore_cDNA/fastq"
     output_dir = "/public/nanopore_cDNA/data/"
     os.makedirs(output_dir, exist_ok=True)
-    
+
+    # Collect all FASTQ files to be processed
     file_list = []
     for dir_name in os.listdir(input_root):
         dir_path = os.path.join(input_root, dir_name)
@@ -70,6 +87,7 @@ def main():
     with Pool(20) as pool:
         results = [res for res in pool.map(process_single_file, file_list) if res]
 
+    # Write results to a CSV file
     output_path = os.path.join(output_dir, "nanopore_qc_report.csv")
     fieldnames = [
         "filename", "total_reads",
