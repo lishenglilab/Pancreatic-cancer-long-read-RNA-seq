@@ -1,3 +1,8 @@
+"""
+This script generates a quality score distribution plot for multiple samples.
+It calculates the kernel density estimation (KDE) of average quality scores for each sample
+and plots them on a single graph.
+"""
 import os
 import pandas as pd
 import numpy as np
@@ -19,6 +24,7 @@ if __name__ == '__main__':
 
 
 def load_data(folder):
+    #Load average quality data from a CSV file for a given sample folder
     try:
         file_path = os.path.join(folder, 'csv_data', 'quality.csv')
         df = pd.read_csv(file_path)
@@ -30,9 +36,11 @@ def load_data(folder):
 
 
 if __name__ == '__main__':
+    # Use multiprocessing to load data in parallel
     with Pool(processes=20) as pool:
         results = pool.map(load_data, folders)
 
+    # Process results from data loading
     data_dict = {}
     all_data = []
     for folder, data in results:
@@ -40,15 +48,18 @@ if __name__ == '__main__':
             data_dict[folder] = data
             all_data.extend(data)
 
+    # Determine the global range for x-axis
     global_min = np.min(all_data)
     global_max = np.max(all_data)
     x = np.linspace(global_min, global_max, 1000)
 
+    # Set up the plot
     plt.figure(figsize=(15, 8), dpi=300)  
     colors = plt.cm.tab20.colors
 
 
     def compute_kde(args):
+        #Compute Kernel Density Estimation for a given sample's data
         folder, data = args
         if len(data) < 2:
             return None
@@ -58,9 +69,11 @@ if __name__ == '__main__':
         return (folder, x, y_count)
 
 
+    # Compute KDE for each sample in parallel
     with Pool(processes=20) as pool:
         kde_results = pool.map(compute_kde, [(k, v) for k, v in data_dict.items()])
 
+    # Plot KDE results for each sample
     for i, result in enumerate(kde_results):
         if result is not None:
             folder, x_vals, y_vals = result
@@ -68,9 +81,11 @@ if __name__ == '__main__':
                      label=folder, alpha=0.8, linewidth=1.5)
 
 
+    # Set plot limits
     plt.xlim(0, 40)  
     plt.ylim(0, 1.5e6)  
 
+    # Set plot labels
     plt.xlabel('Average Quality', fontsize=14)
     plt.ylabel('Count (×10⁶)', fontsize=14) 
 
@@ -79,16 +94,19 @@ if __name__ == '__main__':
         return f"{x / 1e6:.1f}"  
 
 
+    # Apply the custom formatter to the y-axis
     plt.gca().yaxis.set_major_formatter(FuncFormatter(million_formatter))
 
     plt.margins(x=0.02, y=0.05)  
 
+    # Set plot title and legend
     plt.title('Quality Distribution (clean) ', fontsize=16, pad=20)
     plt.legend(bbox_to_anchor=(1.05, 1),
                loc='upper left',
                borderaxespad=0.,
                fontsize=10)
 
+    # Set plot title and legend
     plt.tight_layout()
     output_path = 'quality_distribution_clean2.pdf' 
     plt.savefig(output_path, format='pdf', dpi=300,
