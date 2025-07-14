@@ -1,21 +1,33 @@
+"""
+This script calculates the overall alignment error rate for a nanopore sequencing BAM file.
+It parses the CIGAR string and the NM (edit distance) tag for each read to quantify
+matches, mismatches, insertions, and deletions, providing a summary of alignment accuracy.
+"""
 import pysam
 
 def compute_error_rate(bam_path):
+    """
+    Computes and prints the error rate statistics for a given BAM file.
+    """
     bam = pysam.AlignmentFile(bam_path, "rb")
 
+    # Initialize counters for overall statistics
     total_matches = 0
     total_mismatches = 0
     total_insertions = 0
     total_deletions = 0
 
     for read in bam.fetch(until_eof=True):
+        # Skip alignments that are not primary or are unmapped
         if read.is_unmapped or read.is_secondary or read.is_supplementary:
             continue
 
+        # Initialize statistics for the current read
         read_matches = 0
         read_insertions = 0
         read_deletions = 0
 
+        # Tally operations from the CIGAR string
         for op, length in read.cigartuples:
             if op == 0:  
                 read_matches += length
@@ -24,6 +36,7 @@ def compute_error_rate(bam_path):
             elif op == 2:  
                 read_deletions += length
 
+        # The 'NM' tag represents the total edit distance (mismatches + insertions + deletions).
         try:
             nm = read.get_tag('NM')
             # NM = mismatches + insertions + deletions
@@ -34,6 +47,7 @@ def compute_error_rate(bam_path):
         except KeyError:
             read_mismatches = 0  
 
+        # Add the current read's stats to the overall total
         total_matches += read_matches
         total_mismatches += read_mismatches
         total_insertions += read_insertions
