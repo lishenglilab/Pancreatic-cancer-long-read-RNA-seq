@@ -1,6 +1,4 @@
-# Pancreatic-cancer-long-read-RNA-seq
-
-# Nanopore Sequencing Data Analysis Pipeline
+# Analysis of the Nanopore sequencing data pipeline for long RNA in pancreatic cancer
 
 This repository contains a series of scripts to process and analyze nanopore sequencing data. The pipeline follows a standard workflow from raw data quality control to downstream analysis.
 
