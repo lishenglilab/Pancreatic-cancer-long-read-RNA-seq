@@ -10,18 +10,18 @@ The analysis is divided into several major stages, each contained within a numbe
 
 This stage focuses on assessing the quality of the raw sequencing reads.
 
-- **`0.3.extract_stats.py`**: Parses FASTQ files to calculate read length and average quality score for each read, saving the output to a summary CSV file.
-- **`0.1.read_length_plot.py` & `0.2.quality_score_plot.py`**: Python scripts that generate density plots for read length and quality scores from the extracted stats. They help visualize the initial data quality across multiple samples.
-- **`0.4.length&quality_density_plot.R`**: An R script that provides an alternative method to generate similar density plots for read length and quality using `ggplot2`.
-- **`0.5.NanoReadCategorizer.py`**: Categorizes reads into four bins based on length (<200bp) and quality (<Q7) thresholds, providing a summary report of read characteristics.
+- **`0.2.extract_stats.py`**: Parses FASTQ files to calculate read length and average quality score for each read, saving the output to a summary CSV file.
+- **`0.0.read_length_plot.py` & `0.1.quality_score_plot.py`**: Python scripts that generate density plots for read length and quality scores from the extracted stats. They help visualize the initial data quality across multiple samples.
+- **`0.3.length&quality_density_plot.R`**: An R script that provides an alternative method to generate similar density plots for read length and quality using `ggplot2`.
+- **`0.4.NanoReadCategorizer.py`**: Categorizes reads into four bins based on length (<200bp) and quality (<Q7) thresholds, providing a summary report of read characteristics.
 
 ## 02: Contaminant Filtering
 
 This stage identifies and removes contaminating reads from the dataset, particularly human DNA.
 
-- **`1.1.kraken.sh`**: Runs Kraken2, a taxonomic classification tool, to identify the species of origin for each read.
-- **`1.2.KrakenHumanReadFilter.sh`**: Processes the Kraken2 output to filter out reads classified as human (or other contaminants). It uses `extract_kraken_reads.py` to create new FASTQ files containing only non-human reads.
-- **`1.3.kraken_plot.R`**: Generates a stacked bar plot from the Kraken2 results to visualize the taxonomic composition of each sample, showing the proportions of human, bacterial, viral, and other DNA.
+- **`1.0.kraken.sh`**: Runs Kraken2, a taxonomic classification tool, to identify the species of origin for each read.
+- **`1.1.KrakenHumanReadFilter.sh`**: Processes the Kraken2 output to filter out reads classified as human (or other contaminants). It uses `extract_kraken_reads.py` to create new FASTQ files containing only non-human reads.
+- **`1.2.kraken_plot.R`**: Generates a stacked bar plot from the Kraken2 results to visualize the taxonomic composition of each sample, showing the proportions of human, bacterial, viral, and other DNA.
 
 ## 03: Alignment
 
