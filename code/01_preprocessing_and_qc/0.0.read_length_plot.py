@@ -1,3 +1,9 @@
+"""
+This script generates a read length distribution plot for multiple samples.
+It calculates the kernel density estimation (KDE) of read lengths for each sample
+and plots them on a single graph. It also marks the median peak position across all samples.
+"""
+
 import os
 import pandas as pd
 import numpy as np
@@ -15,6 +21,7 @@ folders = [
 
 
 def load_data(folder):
+    #Load read length data from a CSV file for a given sample folder.
     try:
         file_path = os.path.join(folder, 'csv_data', 'length.csv')
         df = pd.read_csv(file_path)
@@ -26,9 +33,11 @@ def load_data(folder):
 
 
 if __name__ == '__main__':
+    # Use multiprocessing to load data in parallel
     with Pool(processes=20) as pool:
         results = pool.map(load_data, folders)
 
+    # Process results from data loading
     data_dict = {}
     all_data = []
     for folder, data in results:
@@ -40,9 +49,11 @@ if __name__ == '__main__':
 
     print(f"[Debug] Original data range: {np.min(all_data):.1f} - {np.max(all_data):.1f} (total {len(all_data)} data points)")
 
+    # Define percentile range to filter out outliers
     lower_percentile = 1  
     upper_percentile = 99  
 
+    # Calculate percentile values
     q_low = np.percentile(all_data, lower_percentile)
     q_high = np.percentile(all_data, upper_percentile)
 
@@ -50,8 +61,10 @@ if __name__ == '__main__':
     print(f"[Debug] Left tail removed (%): {np.mean(all_data < q_low) * 100:.2f}%")
     print(f"[Debug] Right tail removed (%): {np.mean(all_data > q_high) * 100:.2f}%")
 
+    # Generate x-axis values for the plot
     x = np.linspace(q_low, q_high, 1000)
 
+    # Set up the plot
     plt.figure(figsize=(15, 8))
     plt.rcParams.update({
         'font.size': 12,
@@ -64,6 +77,7 @@ if __name__ == '__main__':
 
 
     def compute_kde(args):
+        #Compute Kernel Density Estimation for a given sample's data
         folder, data = args
         if len(data) < 2:
             return None
@@ -73,18 +87,22 @@ if __name__ == '__main__':
         return (folder, x, y_count)
 
 
+    # Compute KDE for each sample in parallel
     with Pool(processes=20) as pool:
         kde_results = pool.map(compute_kde, [(k, v) for k, v in data_dict.items()])
 
+    # Plot KDE results for each sample
     for i, result in enumerate(kde_results):
         if result is not None:
             folder, x_vals, y_vals = result
             plt.plot(x_vals, y_vals, color=colors[i], label=folder, alpha=0.8, linewidth=1.5)
 
+            # Find and store the peak of the KDE curve
             peak_index = np.argmax(y_vals)
             peak_x = x_vals[peak_index]
             peak_x_values.append(peak_x)
 
+    # Calculate and plot the median peak position
     if peak_x_values:
         median_peak = np.median(peak_x_values)
         print(f"[Debug] Median peak position across samples: {median_peak:.1f} bp")
@@ -103,10 +121,12 @@ if __name__ == '__main__':
                  fontsize=10,
                  bbox=dict(facecolor='white', alpha=0.8, edgecolor='none'))
 
+    # Set plot labels and title
     plt.xlabel('Read Length (bp)', fontsize=14)
     plt.ylabel('Density-Scaled Count', fontsize=14)
     plt.title(f'Read Length Distribution ({lower_percentile}%-{upper_percentile}% Quantile Range)', fontsize=16, pad=20)
 
+    # Configure the legend
     legend = plt.legend(bbox_to_anchor=(1.05, 1),
                         loc='upper left',
                         borderaxespad=0.,
@@ -115,14 +135,17 @@ if __name__ == '__main__':
                         title='Sample Names',
                         title_fontsize=12)
 
+    # Customize plot aesthetics
     ax = plt.gca()
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.grid(True, alpha=0.3, linestyle='--', which='both')
 
+    # Add lines for quantile boundaries
     ax.axvline(q_low, color='gray', linestyle=':', alpha=0.6, linewidth=1)
     ax.axvline(q_high, color='gray', linestyle=':', alpha=0.6, linewidth=1)
 
+    # Add text for quantile boundaries
     plt.text(q_low, ax.get_ylim()[1] * 0.95,
              f'{lower_percentile}%: {q_low:.0f} bp',
              ha='left', va='top', alpha=0.7)
@@ -130,6 +153,7 @@ if __name__ == '__main__':
              f'{upper_percentile}%: {q_high:.0f} bp',
              ha='right', va='top', alpha=0.7)
 
+    # Save the plot to a PDF file
     plt.savefig('Read_Length_Distribution.pdf',
                 format='pdf',
                 dpi=600,
