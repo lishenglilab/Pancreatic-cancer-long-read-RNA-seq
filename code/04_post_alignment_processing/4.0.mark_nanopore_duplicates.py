@@ -1,3 +1,10 @@
+"""
+This script marks PCR duplicates in nanopore sequencing data (BAM format). This script
+adopts a more robust strategy by first clustering reads based on approximate genomic
+location and splice junctions, and then comparing sequence similarity within each
+cluster to identify and mark duplicates.
+"""
+
 import pysam
 import Levenshtein
 from collections import defaultdict
@@ -7,7 +14,9 @@ POSITION_TOLERANCE = 20
 SEQUENCE_SIMILARITY_THRESHOLD = 0.95
 
 def get_junction_signature(read):
-    # Obtain splice junction positions
+    """
+    Extracts a signature of splice junctions from a read's CIGAR string.c
+    """
     junctions = []
     pos = read.reference_start
     for cigartuple in read.cigartuples:
@@ -19,6 +28,9 @@ def get_junction_signature(read):
     return tuple(junctions)
 
 def cluster_reads(bamfile):
+    """
+    Clusters reads from a BAM file based on genomic location and splice junctions.
+    """
     clusters = defaultdict(list)
 
     for read in bamfile.fetch():
@@ -37,12 +49,22 @@ def cluster_reads(bamfile):
     return clusters
 
 def sequence_similarity(seq1, seq2):
+    """
+    Uses Levenshtein distance to measure sequence differences
+    """
     edit_distance = Levenshtein.distance(seq1, seq2)
     max_len = max(len(seq1), len(seq2))
     similarity = 1 - (edit_distance / max_len)
     return similarity
 
 def mark_duplicates(input_bam, output_bam):
+    """
+    - Opens input/output BAM files
+    - Clusters reads by genomic location and splice junctions
+    - Within each cluster: keeps first read as representative
+    - Marks subsequent reads as duplicates if sequence similarity > threshold
+    - Writes all reads to output (marked duplicates still included)
+    """
     bam_in = pysam.AlignmentFile(input_bam, "rb")
     bam_out = pysam.AlignmentFile(output_bam, "wb", template=bam_in)
 
