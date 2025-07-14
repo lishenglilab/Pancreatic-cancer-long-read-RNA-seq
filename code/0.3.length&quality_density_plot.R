@@ -1,9 +1,15 @@
+# This R script generates density plots for read length and average quality scores
+# from nanopore sequencing data. It uses ggplot2 for plotting.
+
+# Load necessary libraries
 library(ggplot2)
 library(dplyr)
 library(scales)
 
 data <- read.csv("nanopore_read_stats.csv")
 
+# Filter the data to remove outliers in read length.
+# This helps in creating a more focused and readable plot for read length distribution.
 data_filtered <- data %>%
   group_by(sample) %>%
   mutate(
@@ -26,6 +32,7 @@ color_palette <- c(
 
 
 
+
 pdf("density_plot_length.pdf", width = 10, height = 6)
 ggplot(data_filtered, aes(x = read_length, color = sample)) +
   geom_density(aes(y = after_stat(count)), size = 0.4) + 
@@ -45,6 +52,7 @@ ggplot(data_filtered, aes(x = read_length, color = sample)) +
 dev.off()
 
 
+# Generate and save the density plot for average quality scores
 pdf("density_plot_Q.pdf", width = 10, height = 6)
 ggplot(data, aes(x = avg_quality, color = sample)) +
   geom_density(aes(y = after_stat(count)), size = 0.4) + 
@@ -77,7 +85,7 @@ dev.off()
 
 
 
-
+# Calculate the peak of the density plot for each sample's read length
 peak_values <- data_filtered %>%
   group_by(sample) %>%
   group_modify(~ {
@@ -87,10 +95,10 @@ peak_values <- data_filtered %>%
   }) %>%
   ungroup()
 
-
+# Calculate the median of all peak values
 median_peak <- median(peak_values$peak)
 
-
+# Generate and save the read length density plot with a line for the median peak
 pdf("density_plot_length.pdf", width = 10, height = 6)
 ggplot(data_filtered, aes(x = read_length, color = sample)) +
   geom_density(aes(y = after_stat(count)), size = 0.4) +
