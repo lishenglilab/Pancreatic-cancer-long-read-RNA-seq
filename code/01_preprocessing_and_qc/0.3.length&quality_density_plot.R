@@ -33,11 +33,40 @@ color_palette <- c(
 
 
 
-pdf("density_plot_length.pdf", width = 10, height = 6)
+
+# Before filtering (using raw 'data'), calculate the 50th percentile (median) for each sample
+median_values <- data %>%
+  group_by(sample) %>%
+  summarise(
+    sample_median = quantile(read_length, 0.5, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+# Calculate the mean of all sample medians
+mean_of_medians <- mean(median_values$sample_median, na.rm = TRUE)
+
+
+# Generate the plot
+pdf("density_plot_length_mean_of_medians.pdf", width = 10, height = 6)
 ggplot(data_filtered, aes(x = read_length, color = sample)) +
-  geom_density(aes(y = after_stat(count)), size = 0.4) + 
+  geom_density(aes(y = after_stat(count)), size = 0.4) +
+  # Add vertical line using the calculated 'mean_of_medians'
+  geom_vline(
+    xintercept = mean_of_medians,
+    color = "black",
+    linetype = "dashed",
+    size = 0.6
+  ) +
+  annotate(
+    "text",
+    x = mean_of_medians,
+    y = Inf,
+    label = sprintf("Mean of Medians: %.1f", mean_of_medians),
+    vjust = 2,
+    color = "black"
+  ) +
   scale_color_manual(values = color_palette) +
-  scale_y_continuous(labels = label_comma()) + 
+  scale_y_continuous(labels = label_comma()) +
   labs(
     title = "Read Length Distribution by Sample",
     x = "Read Length",
@@ -45,11 +74,12 @@ ggplot(data_filtered, aes(x = read_length, color = sample)) +
   ) +
   theme_minimal() +
   theme(
-    legend.position = "right",  
-    legend.key.size = unit(0.3, "cm"),  
-    legend.text = element_text(size = 8)  
-  ) 
+    legend.position = "right",
+    legend.key.size = unit(0.3, "cm"),
+    legend.text = element_text(size = 8)
+  )
 dev.off()
+
 
 
 # Generate and save the density plot for average quality scores
@@ -79,55 +109,4 @@ ggplot(data, aes(x = avg_quality, color = sample)) +
   )
 dev.off()
 
-
-
-
-
-
-
-# Calculate the peak of the density plot for each sample's read length
-peak_values <- data_filtered %>%
-  group_by(sample) %>%
-  group_modify(~ {
-    dens <- density(.x$read_length, n = 512, bw = "nrd0")  
-    peak_x <- dens$x[which.max(dens$y)]
-    data.frame(peak = peak_x)
-  }) %>%
-  ungroup()
-
-# Calculate the median of all peak values
-median_peak <- median(peak_values$peak)
-
-# Generate and save the read length density plot with a line for the median peak
-pdf("density_plot_length.pdf", width = 10, height = 6)
-ggplot(data_filtered, aes(x = read_length, color = sample)) +
-  geom_density(aes(y = after_stat(count)), size = 0.4) +
-  geom_vline(
-    xintercept = median_peak,
-    color = "black",
-    linetype = "dashed",
-    size = 0.6
-  ) +
-  annotate(
-    "text",
-    x = median_peak,
-    y = Inf,
-    label = sprintf("Median Peak: %.1f", median_peak),
-    vjust = 2,
-    color = "black"
-  ) +
-  scale_color_manual(values = color_palette) +
-  scale_y_continuous(labels = label_comma()) +
-  labs(
-    title = "Read Length Distribution by Sample",
-    x = "Read Length",
-    y = "Count"
-  ) +
-  theme_minimal() +
-  theme(
-    legend.position = "right",
-    legend.key.size = unit(0.3, "cm"),
-    legend.text = element_text(size = 8)
-  )
-dev.off()
 
