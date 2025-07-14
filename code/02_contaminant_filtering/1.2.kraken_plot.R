@@ -13,33 +13,50 @@ data <- read_xlsx("KRAKEN.xlsx", sheet = "Sheet1")
 # View the data
 print(data)
 
-# Convert data from wide format to long format
-# Note: The first column is named `...1`, not `Sample`
-data_long <- data %>%
-  pivot_longer(cols = -`...1`, names_to = "Sample", values_to = "Value") %>%
-  rename(Category = `...1`)  # Rename `...1` column to `Category`
+# Clean and transform the data
+data_clean <- data %>%
+  rename(category = ...1) %>%
+  mutate(across(-category, as.character))
 
-# Set factor levels for Category
-data_long$Category <- factor(data_long$Category, 
-                             levels = c("unclassified", "others", "Bacteria", "Viruses", "Homo"))
+# Convert to long format
+data_long <- data_clean %>%
+  pivot_longer(cols = -category, 
+               names_to = "sample", 
+               values_to = "value") %>%
+  # Ensure value column is numeric
+  mutate(value = as.numeric(value))
 
-# Plot and save as PDF
-pdf("contamination_status.pdf", width = 10, height = 6)
-ggplot(data_long, aes(x = Sample, y = Value, fill = Category)) +
+
+# Set factor levels to place Homo Sapien at the bottom
+data_long$category <- factor(data_long$category, 
+                             levels = c( "Mycoplasmatota", "Viruses", "others", "unclassified", "Homo Sapien"))
+
+# Define color palette
+colors <- c(
+  "unclassified" = "#9467BD",
+  "Homo Sapien" = "#1f77b4",
+  "Mycoplasmatota" = "#ff7f0e",
+  "Viruses" = "#2ca02c",
+  "others" = "#d62728"
+)
+
+# Create PDF output
+pdf("contamination_status_v2.pdf", width = 10, height = 6)
+ggplot(data_long, aes(x = sample, y = value, fill = category)) +
   geom_bar(stat = "identity", position = "stack") +
-  labs(title = "The contamination status of each sample",
-       x = "Sample",
-       y = "Percentage (%)",
-       fill = "Category") +
+  scale_fill_manual(values = colors) +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_fill_manual(values = c(
-    "unclassified" = "#9467BD",  # purple
-    "Homo" = "#1f77b4",         # blue
-    "Bacteria" = "#ff7f0e",     # orange
-    "Viruses" = "#2ca02c",      # green
-    "others" = "#d62728"        # red
-  ))
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title = element_text(size = 12)
+  ) +
+  labs(
+    title = "Composition of Different Categories in Each Sample",
+    x = "Sample",
+    y = "Percentage (%)",
+    fill = "Category"
+  )
 
-# Close the PDF device
 dev.off()
