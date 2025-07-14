@@ -1,7 +1,6 @@
-# Install and load necessary packages
-install.packages("readxl")
-install.packages("ggplot2")
-install.packages("tidyverse")
+# This script reads Kraken analysis results from an Excel file,
+# processes the data, and generates a stacked bar plot to visualize
+# the taxonomic composition (contamination status) of each sample.
 
 library(readxl)
 library(ggplot2)
