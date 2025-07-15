@@ -54,6 +54,3 @@ find "$BAM_DIR" -name "*.dedup.sorted.bam" | parallel -j 10 --halt soon,fail=1 p
     exit 1
 }
 
-# --- Completion ---
-echo "[$(date)] All tasks completed successfully!"
-echo "结果文件保存在: $OUT_DIR/"
