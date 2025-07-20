@@ -8,58 +8,66 @@ import os
 from Bio import SeqIO
 import csv
 from multiprocessing import Pool, cpu_count
+import math  # Import math library for log calculations
 
+# Set input and output paths
 input_dir = "/public/nanopore_cDNA/fastq"
-output_csv = "/public/nanopore_cDNA/data/nanopore_read_stats.csv"
+output_csv = "/public/nanopore_cDNA/data/nanopore_read_stats_correct_avg_q.csv"
 
+# Define function to process a single sample (using correct Q-value averaging method)
 def process_sample(sample_dir):
-    #Processes a single sample directory to extract read length and average quality
     dir_path = os.path.join(input_dir, sample_dir)
-    
     target_file = f"filtered_{sample_dir}_nanofilt.fastq"
     fastq_path = os.path.join(dir_path, target_file)
-    
+
     if not os.path.isfile(fastq_path):
         print(f"Warning: {target_file} not found in {dir_path}")
         return []
-    
+
     print(f"Processing: {fastq_path}")
     results = []
 
-    # Parse the FASTQ filec
     with open(fastq_path, "r") as handle:
         for record in SeqIO.parse(handle, "fastq"):
-            # Parse the FASTQ file
             length = len(record.seq)
+            if length == 0:
+                continue
 
-            # Calculate average quality scorec
             qualities = record.letter_annotations["phred_quality"]
-            avg_q = sum(qualities) / len(qualities)
-            
-            results.append([sample_dir, length, avg_q])
-    
+
+            # --- Steps for correct average Q-value calculation ---
+            # 1. Convert all Q-values to error probabilities P and sum them
+            sum_of_error_probs = sum([10**(-q / 10.0) for q in qualities])
+
+            # 2. Calculate average error probability P_avg
+            avg_error_prob = sum_of_error_probs / length
+
+            # 3. Convert average error probability back to final Q-value Q_avg
+            # If avg_error_prob is 0 (meaning perfect quality), assign a high Q-value (e.g., 93)
+            if avg_error_prob == 0:
+                avg_q_correct = 93.0
+            else:
+                avg_q_correct = -10 * math.log10(avg_error_prob)
+            # --- End of calculation ---
+
+            results.append([sample_dir, length, avg_q_correct])
+
     return results
 
+# Main program (same as before)
 if __name__ == "__main__":
-    # Get a list of all sample directories in the input directory
     sample_dirs = [d for d in os.listdir(input_dir) if os.path.isdir(os.path.join(input_dir, d))]
-
-    # Set the number of processes for the poolc
     num_processes = min(cpu_count(), 20)
 
-    # Set the number of processes for the pool
     with Pool(processes=num_processes) as pool:
         all_results = pool.map(process_sample, sample_dirs)
 
-    # Write all results to a single CSV file
     with open(output_csv, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        # Write header rowc
-        writer.writerow(['sample', 'read_length', 'avg_quality'])
+        writer.writerow(['sample', 'read_length', 'avg_quality_correct'])
 
-        # Write header row
         for results in all_results:
-            if results:  
+            if results:
                 writer.writerows(results)
-    
-    print(f"Data processing completed. Results saved to: {output_csv}")
+
+    print(f"Data processing complete. Results saved to: {output_csv}")
