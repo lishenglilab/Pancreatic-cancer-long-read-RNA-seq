@@ -10,10 +10,9 @@ The analysis is divided into several major stages, each contained within a numbe
 
 This stage focuses on assessing the quality of the raw sequencing reads.
 
-- **`0.2.extract_stats.py`**: Parses FASTQ files to calculate read length and average quality score for each read, saving the output to a summary CSV file.
-- **`0.0.read_length_plot.py` & `0.1.quality_score_plot.py`**: Python scripts that generate density plots for read length and quality scores from the extracted stats. They help visualize the initial data quality across multiple samples.
-- **`0.3.length&quality_density_plot.R`**: An R script that provides an alternative method to generate similar density plots for read length and quality using `ggplot2`.
-- **`0.4.NanoReadCategorizer.py`**: Categorizes reads into four bins based on length (<200bp) and quality (<Q7) thresholds, providing a summary report of read characteristics.
+- **`0.0.extract_stats.py`**: Parses FASTQ files to calculate read length and average quality score for each read, saving the output to a summary CSV file.
+- **`0.1.length&quality_density_plot.R`**: An R script that provides an alternative method to generate similar density plots for read length and quality using `ggplot2`.
+- **`0.2.NanoReadCategorizer.py`**: Categorizes reads into four bins based on length (<200bp) and quality (<Q7) thresholds, providing a summary report of read characteristics.
 
 ## 02: Contaminant Filtering
 
