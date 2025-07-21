@@ -1,56 +1,47 @@
 #!/bin/bash
 
-# This script calculates the per-base read coverage across all exonic regions
-# for a set of BAM files. It first generates a BED file of merged exons from a
-# GTF annotation, then uses bedtools and GNU Parallel to compute coverage for each sample.
+# Set Java memory and Picard path
+JAVA_MEM="-Xmx64g"
+PICARD_JAR="/public/miniconda3/envs/java_env/share/picard-2.20.4-0/picard.jar"
 
-# --- Configuration ---
-GTF=/reference/star/human/v41/gencode.v41.primary_assembly.annotation.gtf"
-BAM_DIR="/public/nanopore_cDNA/bam"
-OUT_DIR="/public/nanopore_cDNA/bam/coverage_results"
-mkdir -p $OUT_DIR
+# Reference file paths
+REF_FLAT="/public/reference/star/human/v41/refFlat.txt"
+GENOME_FA="/public/reference/star/human/v41/gencode.v41.GRCh38.primary_assembly.genome.fa"
 
-# --- Function Definition ---
-# This function processes a single BAM file to calculate exon coverage.
-process_bam() {
-    local bam=$1
-    local sample=$(basename "$bam" .dedup.sorted.bam)
-    
-    # Check for a BAM index (.bai file). If it doesn't exist, create it.
-    # This is required by bedtools. It checks for both .bam.bai and .bai extensions.
-    if [[ ! -f "${bam}.bai" && ! -f "${bam%.bam}.bai" ]]; then
-        echo "[$(date)] Indexing $bam..."
-        if ! samtools index "$bam"; then
-            echo "ERROR: Failed to index $bam" >&2
-            return 1
-        fi
-    fi
+# Find all matching BAM files
+BAM_FILES=$(find /public/nanopore_cDNA/bam/ -name "*dedup.sorted.filtered.sorted.bam")
 
-    # Use bedtools coverage to calculate per-base depth.
-    echo "[$(date)] Processing $sample..."
-    bedtools coverage -a merged_exons.bed -b "$bam" -d > "$OUT_DIR/${sample}.coverage_per_base.txt" || {
-        echo "ERROR: bedtools failed for $bam" >&2
-        return 1
-    }
-}
-export -f process_bam
-export OUT_DIR
-
-# --- Main Workflow ---
-echo "=== Starting Exon Coverage Analysis ==="
-date
-
-# Step 1: Create a merged BED file of all exons. This is done only once.
-if [[ ! -f "merged_exons.bed" ]]; then
-    echo "[$(date)] Extracting exons from GTF..."
-    grep -w "exon" "$GTF" | awk 'BEGIN{OFS="\t"}{print $1, $4-1, $5, ".", ".", $7}' > exons.bed || exit 1
-    bedtools sort -i exons.bed | bedtools merge -s -i - > merged_exons.bed || exit 1
+# Check if any files were found
+if [ -z "$BAM_FILES" ]; then
+    echo "No matching BAM files found"
+    exit 1
 fi
 
-# Step 2: Find and process all BAM files in parallel.
-echo "[$(date)] Processing BAM files (20 parallel jobs)..."
-find "$BAM_DIR" -name "*.dedup.sorted.bam" | parallel -j 10 --halt soon,fail=1 process_bam || {
-    echo "ERROR: Parallel execution failed" >&2
-    exit 1
-}
+# Process each BAM file with CollectRnaSeqMetrics
+for BAM_FILE in $BAM_FILES; do
+    # Extract sample name from BAM filename
+    SAMPLE_NAME=$(basename "$BAM_FILE" | cut -d'.' -f1)
+    OUTPUT_FILE="${SAMPLE_NAME}_metrics.txt"
+    
+    echo "Processing: $BAM_FILE"
+    echo "Output file: $OUTPUT_FILE"
+    
+    # Run Picard tool
+    java $JAVA_MEM -jar "$PICARD_JAR" \
+        CollectRnaSeqMetrics \
+        I="$BAM_FILE" \
+        O="$OUTPUT_FILE" \
+        REF_FLAT="$REF_FLAT" \
+        R="$GENOME_FA" \
+        STRAND_SPECIFICITY=NONE \
+        VALIDATION_STRINGENCY=SILENT \
+        METRIC_ACCUMULATION_LEVEL=ALL_READS
+    
+    if [ $? -eq 0 ]; then
+        echo "Successfully processed: $BAM_FILE"
+    else
+        echo "Failed to process: $BAM_FILE"
+    fi
+done
 
+echo "All files processed"
