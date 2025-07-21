@@ -1,4 +1,4 @@
-
+# To filter reads that are EITHER <200bp OR have Q<7 
 
 #!/bin/bash
 
