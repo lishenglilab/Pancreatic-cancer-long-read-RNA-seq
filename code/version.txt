@@ -5,6 +5,8 @@ Kraken2     2.1.3       kraken2 --db k2_standard_20241228 \
                                 --report "kraken_standard_out/${sample_name}_report.txt" \
                                 "${dir}clean.fastq.gz"
 
+NanoFilt    2.8.0       NanoFilt -l 200 -q 7 "$file_name" > "${base_name}_nanofilt.fastq"
+
 minimap2    2.22-r1101  minimap2 -ax splice ${ref_fa} ${in_fq} -t 6 -o ${out_sam}
 
 samtools    1.13        samtools view -bS ${out_sam} --threads 6 > ${out_bam_tmp}
@@ -13,7 +15,7 @@ samtools    1.13        samtools view -bS ${out_sam} --threads 6 > ${out_bam_tmp
                         samtools view -c -f1024 "$bam" #remove duplicate
                         samtools flagstat "$bam"
 
-FLAIR       2.0.0       python flair-2.0.0/src/flair/bam2Bed12.py -i \"$bam\" --keep_supplementary > \"${bam%.bam}.bed\"
+FLAIR        2.0.0       python flair-2.0.0/src/flair/bam2Bed12.py -i \"$bam\" --keep_supplementary > \"${bam%.bam}.bed\"
                         flair correct -q "$bed_file" -f "$ref_gtf" -g "$ref_fa" --output "$out_name" --threads 3
                         flair collapse -g "${ref_fa}" -q "${bed_file}" --gtf "${ref_gtf}" \
                                        -r "${fastq_list}" \
@@ -21,3 +23,14 @@ FLAIR       2.0.0       python flair-2.0.0/src/flair/bam2Bed12.py -i \"$bam\" --
                                        --threads 50 \
                                        --temp_dir "${output_dir}/tmp3"
                         flair quantify -r ${manifest} -i ${isoforms} --output ${out_name} --threads 72 --temp_dir ${out_dir} --sample_id_only --tpm
+
+picard      2.20.4-SNAPSHOT
+                             java -Xmx64g -jar /public/miniconda3/envs/java_env/share/picard-2.20.4-0/picard.jar                                            \
+                                  CollectRnaSeqMetrics \
+                                  I=/public/nanopore_cDNA/bam/APSC-1-2.dedup.sorted.filtered.sorted.bam \
+                                  O=APSC-1-2_metrics.txt \
+                                  REF_FLAT=/public/home/shengli-lab/shengnanluo/reference/star/human/v41/refFlat.txt \
+                                  R=/public/reference/star/human/v41/gencode.v41.GRCh38.primary_assembly.genome.fa \
+                                  STRAND_SPECIFICITY=NONE \
+                                  VALIDATION_STRINGENCY=SILENT \
+                                  METRIC_ACCUMULATION_LEVEL=ALL_READS
