@@ -68,20 +68,22 @@ This extensive stage refines the alignment files and performs further quality co
     - **`7.1.generate_deepth.sh`**: Counts the number of primary mapped reads in the final filtered BAM files.
     - **`7.2.exon_coverage.sh`**: Automatically process multiple RNA-seq BAM files using Picard's CollectRnaSeqMetrics tool to generate quality metric reports for each sample.
     - **`7.3.plot_gene_body_coverage.R`**: Visualizes the coverage distribution across gene bodies.
+- **Internal Priming Analysis**:
+    - **`8.0.extract_tss_from_bed.sh`**: Extracts transcription start sites (TSS) from BED files.
+    - **`8.1.Genomic_seq_star.sh`**: Retrieves genomic sequences around the TSS.
+    - **`8.2.internal_priming_analysis.sh`**: Analyzes sequences for internal priming artifacts.
 
 ### 05: Downstream Analysis (Transcript Isoform Analysis with FLAIR)
 
 This stage focuses on identifying and quantifying transcript isoforms using the FLAIR software.
 
-- **`8.0.bam2bed12.sh`**: Converts the final BAM files into BED12 format, which is required for FLAIR.
-- **`8.1.flair_correct.sh`**: Runs `flair correct` to use a reference annotation to correct splice sites in the long reads.
-- **`8.2.flair_collapse.sh`**: Runs `flair collapse` to collapse the corrected reads from all samples into a high-confidence set of transcript isoforms.
-- **`8.3.flair_quantify_tmp.sh`**: Runs `flair quantify` to calculate the expression levels (in TPM) of the identified isoforms for each sample.
+- **`9.0.bam2bed12.sh`**: Converts the final BAM files into BED12 format, which is required for FLAIR.
+- **`9.1.flair_correct.sh`**: Runs `flair correct` to use a reference annotation to correct splice sites in the long reads.
+- **`9.2.flair_collapse.sh`**: Runs `flair collapse` to collapse the corrected reads from all samples into a high-confidence set of transcript isoforms.
+- **`9.3.flair_quantify_tmp.sh`**: Runs `flair quantify` to calculate the expression levels (in TPM) of the identified isoforms for each sample.
 
 ### Other
 
 Miscellaneous analysis scripts.
 
-- **`9.0.pearson.R`**: Reads the TPM expression matrix from FLAIR and generates a Pearson correlation heatmap using `pheatmap`. This visualizes the similarity between samples.
-
-
+- **`10.0.pearson.R`**: Reads the TPM expression matrix from FLAIR and generates a Pearson correlation heatmap using `pheatmap`. This visualizes the similarity between samples.
