@@ -34,3 +34,5 @@ picard      2.20.4-SNAPSHOT
                                   STRAND_SPECIFICITY=NONE \
                                   VALIDATION_STRINGENCY=SILENT \
                                   METRIC_ACCUMULATION_LEVEL=ALL_READS
+bedtools   v2.30.0      bedtools slop -i read_tss.bed -g genome.chrom.sizes -b 20 | bedtools getfasta -fi genome.fa -bed - > start_flanks.fa
+                        
