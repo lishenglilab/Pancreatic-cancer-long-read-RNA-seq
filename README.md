@@ -21,6 +21,7 @@ This pipeline utilizes several bioinformatics tools. The specific versions used 
 - minimap2 (v2.22-r1101) - Long-read alignment
 - samtools (v1.13) - SAM/BAM file manipulation
 - FLAIR (v2.0.0) - Full-Length Alternative Isoform analysis of RNA
+- bedtools(v2.30.0) - A powerful toolset for genome arithmetic
 - picard(2.20.4-SNAPSHOT) - (CollectRnaSeqMetrics) calculates RNA sequencing quality metrics
 
 ## Detailed Pipeline Description
